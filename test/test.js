@@ -28,7 +28,7 @@ describe("redis-lock", function() {
 				taskCount++;
 				completed();
 				proceed();
-			}, 500);	// Longer
+			}, 500);	// Longer, started first
 		});
 
 		lock(redisClient, "testLock", function(completed) {
@@ -37,7 +37,7 @@ describe("redis-lock", function() {
 				taskCount++;
 				completed();
 				proceed();
-			}, 200);	// Shorter
+			}, 200);	// Shorter, started later
 		});
 
 		function proceed() {
@@ -46,5 +46,19 @@ describe("redis-lock", function() {
 				done();
 			}
 		}
+	});
+
+	it("shouldn't create a deadlock if the first operation doesn't release the lock within <timeout>", function(done) {
+		var start = new Date();
+		lock(redisClient, "testLock", 300, function(completed) {
+			// Not signalling completion
+		});
+
+		lock(redisClient, "testLock", function(completed) {
+			// This should be called after 300 ms
+			(new Date() - start).should.be.above(300);
+			completed();
+			done();
+		});
 	});
 });
