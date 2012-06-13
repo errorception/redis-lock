@@ -4,7 +4,8 @@
   "description": "Implements a locking primitive using redis. An implementation of the algorithm described at http://redis.io/commands/setnx",
   "version": "0.0.1",
   "repository": {
-    "url": ""
+    "type": "git",
+    "url": "git://github.com/errorception/redis-lock.git"
   },
   "main": "index.js",
   "engines": {
@@ -19,5 +20,6 @@
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha"
   },
-  "optionalDependencies": {}
+  "optionalDependencies": {},
+  "homepage": "https://github.com/errorception/redis-lock"
 }
