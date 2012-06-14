@@ -1,8 +1,8 @@
 "use strict";
 
-function aquireLock(client, lockString, lockTimeout, lockAcquired) {
+function acquireLock(client, lockString, lockTimeout, lockAcquired) {
 	function retry() {
-		aquireLock(client, lockString, lockTimeout, lockAcquired);
+		acquireLock(client, lockString, lockTimeout, lockAcquired);
 	}
 
 	var lockTimeoutValue = (Date.now() + lockTimeout + 1);
@@ -42,7 +42,7 @@ module.exports = function(client, lockString, lockTimeout, lockedOperations) {
 	}
 
 	if(!lockString) {
-		throw new Error("You must specify a lock string. It is on the basis on this the lock is aquired.");
+		throw new Error("You must specify a lock string. It is on the basis on this the lock is acquired.");
 	}
 
 	if(!lockedOperations) {
@@ -52,7 +52,7 @@ module.exports = function(client, lockString, lockTimeout, lockedOperations) {
 
 	lockString = "lock." + lockString;
 
-	aquireLock(client, lockString, lockTimeout, function(lockTimeoutValue) {
+	acquireLock(client, lockString, lockTimeout, function(lockTimeoutValue) {
 		lockedOperations(function(allDone) {
 			if(lockTimeoutValue > Date.now()) client.del(lockString, allDone);
 		});
