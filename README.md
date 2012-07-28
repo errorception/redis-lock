@@ -48,13 +48,13 @@ lock("myLock", function(done) {
 
 ## Usage
 
-``redis-lock`` is really simple to use!
+``redis-lock`` is really simple to use - It's just a function!
 
-### initialize(client)
+### Initialization
 
-* ``client``: An redis client instance, created by calling ``.createClient()`` on the excellent [node-redis](https://github.com/mranney/node_redis). This is taken in as a parameter because you might want to configure the client to suit your environment (host, port, etc.), and to enable you to reuse the client from your app if you want to.
+To initialize redis-lock, simply call it by passing in a redis client instance, created by calling ``.createClient()`` on the excellent [node-redis](https://github.com/mranney/node_redis). This is taken in as a parameter because you might want to configure the client to suit your environment (host, port, etc.), and to enable you to reuse the client from your app if you want to.
 
-The ``initialize`` method returns a function called (say) ``lock``, described below:
+This will return a function called (say) ``lock``, described below:
 
 ### lock(client, lockName, [timeout = 5000], cb)
 
