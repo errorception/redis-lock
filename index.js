@@ -36,25 +36,27 @@ function acquireLock(client, lockString, lockTimeout, lockAcquired) {
 	});
 }
 
-module.exports = function(client, lockString, lockTimeout, lockedOperations) {
-	if(!client) {
+module.exports = function(client) {
+	if(!(client && client.setnx)) {
 		throw new Error("You must specify a client instance of http://github.com/mranney/node_redis");
 	}
 
-	if(!lockString) {
-		throw new Error("You must specify a lock string. It is on the basis on this the lock is acquired.");
-	}
+	return function(lockString, lockTimeout, lockedOperations) {
+		if(!lockString) {
+			throw new Error("You must specify a lock string. It is on the basis on this the lock is acquired.");
+		}
 
-	if(!lockedOperations) {
-		lockedOperations = lockTimeout;
-		lockTimeout = 5000;
-	}
+		if(!lockedOperations) {
+			lockedOperations = lockTimeout;
+			lockTimeout = 5000;
+		}
 
-	lockString = "lock." + lockString;
+		lockString = "lock." + lockString;
 
-	acquireLock(client, lockString, lockTimeout, function(lockTimeoutValue) {
-		lockedOperations(function(allDone) {
-			if(lockTimeoutValue > Date.now()) client.del(lockString, allDone);
+		acquireLock(client, lockString, lockTimeout, function(lockTimeoutValue) {
+			lockedOperations(function(allDone) {
+				if(lockTimeoutValue > Date.now()) client.del(lockString, allDone);
+			});
 		});
-	});
+	}
 };

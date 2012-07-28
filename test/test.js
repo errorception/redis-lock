@@ -1,10 +1,10 @@
 var should = require("should"),
 	redisClient = require("redis").createClient(),
-	lock = require("../index");
+	lock = require("../index")(redisClient);
 
 describe("redis-lock", function() {
 	it("should aquire a lock and call the callback", function(done) {
-		lock(redisClient, "testLock", function(completed) {
+		lock("testLock", function(completed) {
 			redisClient.get("lock.testLock", function(err, timeStamp) {
 				if(err) throw err;
 
@@ -22,7 +22,7 @@ describe("redis-lock", function() {
 
 	it("should defer second operation if first has lock", function(done) {
 		var savedValue, taskCount = 0;
-		lock(redisClient, "testLock", function(completed) {
+		lock("testLock", function(completed) {
 			setTimeout(function() {
 				savedValue = 1;
 				taskCount++;
@@ -31,7 +31,7 @@ describe("redis-lock", function() {
 			}, 500);	// Longer, started first
 		});
 
-		lock(redisClient, "testLock", function(completed) {
+		lock("testLock", function(completed) {
 			setTimeout(function() {
 				savedValue = 2;
 				taskCount++;
@@ -50,11 +50,11 @@ describe("redis-lock", function() {
 
 	it("shouldn't create a deadlock if the first operation doesn't release the lock within <timeout>", function(done) {
 		var start = new Date();
-		lock(redisClient, "testLock", 300, function(completed) {
+		lock("testLock", 300, function(completed) {
 			// Not signalling completion
 		});
 
-		lock(redisClient, "testLock", function(completed) {
+		lock("testLock", function(completed) {
 			// This should be called after 300 ms
 			(new Date() - start).should.be.above(300);
 			completed();

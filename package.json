@@ -1,25 +1,26 @@
 {
-  "author": "Rakesh Pai <rakeshpai@errorception.com> (http://errorception.com/)",
-  "name": "redis-lock",
-  "description": "Implements a locking primitive using redis. An implementation of the algorithm described at http://redis.io/commands/setnx",
-  "version": "0.0.1",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/errorception/redis-lock.git"
-  },
-  "main": "index.js",
-  "engines": {
-    "node": "~0.6.11 || 0.6.11-pre"
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "mocha": "1.0.x",
-    "redis": "0.x",
-    "should": "0.x"
-  },
-  "scripts": {
-    "test": "./node_modules/mocha/bin/mocha"
-  },
-  "optionalDependencies": {},
-  "homepage": "https://github.com/errorception/redis-lock"
+	"author": "Rakesh Pai <rakeshpai@errorception.com> (http://errorception.com/)",
+	"name": "redis-lock",
+	"description": "A locking primitive using redis.",
+	"version": "0.0.2",
+	"repository": {
+		"type": "git",
+		"url": "git://github.com/errorception/redis-lock.git"
+	},
+	"main": "index.js",
+	"engines": {
+		"node": "~0.6.11 || 0.6.11-pre"
+	},
+	"dependencies": {},
+	"devDependencies": {
+		"mocha": "1.0.x",
+		"redis": "0.x",
+		"should": "0.x"
+	},
+	"scripts": {
+		"test": "./node_modules/mocha/bin/mocha"
+	},
+	"optionalDependencies": {},
+	"homepage": "https://github.com/errorception/redis-lock",
+	"keywords": ["locks", "concurrency", "redis"]
 }

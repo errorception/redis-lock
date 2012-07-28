@@ -13,9 +13,9 @@ Used heavily at [errorception](http://errorception.com/).
 
 ```javascript
 var client = require("redis").createClient(),
-	lock = require("redis-lock");
+	lock = require("redis-lock")(client);
 
-lock(client, "myLock", function(done) {
+lock("myLock", function(done) {
 	// No one else will be able to get a lock on 'myLock' until you call done()
 	done();
 });
@@ -24,14 +24,14 @@ lock(client, "myLock", function(done) {
 Slightly more descriptive example:
 ```javascript
 var client = require("redis").createClient(),
-	lock = require("redis-lock");
+	lock = require("redis-lock")(client);
 
-lock(client, "myLock", function(done) {
+lock("myLock", function(done) {
 	// Simulate a 1 second long operation
 	setTimeout(done, 1000);
 });
 
-lock(client, "myLock", function(done) {
+lock("myLock", function(done) {
 	// Even though this function has been scheduled at the same time 
 	// as the function above, this callback will not be executed till 
 	// the function above has called done(). Hence, this will have to
@@ -48,11 +48,16 @@ lock(client, "myLock", function(done) {
 
 ## Usage
 
-``redis-lock`` is really simple to use - it's just one function!
+``redis-lock`` is really simple to use!
+
+### initialize(client)
+
+* ``client``: An redis client instance, created by calling ``.createClient()`` on the excellent [node-redis](https://github.com/mranney/node_redis). This is taken in as a parameter because you might want to configure the client to suit your environment (host, port, etc.), and to enable you to reuse the client from your app if you want to.
+
+The ``initialize`` method returns a function called (say) ``lock``, described below:
 
 ### lock(client, lockName, [timeout = 5000], cb)
 
-* ``client``: An redis client instance, created by calling ``.createClient()`` on the excellent [node-redis](https://github.com/mranney/node_redis). This is taken in as a parameter because you might want to configure the client to suit your environment (host, port, etc.), and to enable you to reuse the client from your app if you want to.
 * ``lockName``: Any name for a lock. Must follow redis's key naming rules. Make this as granular as you can. For example, to get a lock when editing record 1 in the database, call the lock ``record1`` rather than ``database``, so that other records in the database can be modified even as you are holding this lock.
 * ``timeout``: (Optional) The maximum time (in ms) to hold the lock for. If this time is exceeded, the lock is automatically released to prevent deadlocks. Default: 5000 ms (5 seconds).
 * ``cb``: The function to call when the lock has been acquired. This function gets one argument - a method called (say) ``done`` which should be called to release the lock.
@@ -62,10 +67,10 @@ The ``done`` function can optionally take a callback function as an argument, in
 Full example, with ``console.log`` calls to illustrate the flow:
 ```javascript
 var client = require("redis").createClient(),
-	lock = require("redis-lock");
+	lock = require("redis-lock")(client);
 
 console.log("Asking for lock");
-lock(client, "myLock", function(done) {
+lock("myLock", function(done) {
 	console.log("Lock acquired");
 
 	setTimeout(function() {		// Simulate some task
@@ -87,6 +92,11 @@ lock(client, "myLock", function(done) {
 * If the timeout is breached, the lock is released, and the next function coming along and asking for a lock acquires the lock.
 * Since it's asynchronous, different functions could be holding different locks simultaneously. This is awesome!
 * If redis is down for any reason, none of the functions are given locks, and none of the locks are released. The code will keep polling to check if redis is available again to acquire the lock.
+
+## Changelog
+
+* 0.0.2 - Slightly nicer API - Now the redis client needs to be passed in only once at the beginning.
+* 0.0.1 - First release.
 
 ## License
 
