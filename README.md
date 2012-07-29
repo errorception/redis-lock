@@ -56,7 +56,7 @@ To initialize redis-lock, simply call it by passing in a redis client instance, 
 
 This will return a function called (say) ``lock``, described below:
 
-### lock(client, lockName, [timeout = 5000], cb)
+### lock(lockName, [timeout = 5000], cb)
 
 * ``lockName``: Any name for a lock. Must follow redis's key naming rules. Make this as granular as you can. For example, to get a lock when editing record 1 in the database, call the lock ``record1`` rather than ``database``, so that other records in the database can be modified even as you are holding this lock.
 * ``timeout``: (Optional) The maximum time (in ms) to hold the lock for. If this time is exceeded, the lock is automatically released to prevent deadlocks. Default: 5000 ms (5 seconds).
