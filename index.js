@@ -11,7 +11,7 @@ function acquireLock(client, lockString, lockTimeout, lockAcquired) {
 		if(err) return process.nextTick(retry);
 		if(result === 0) {
 			client.get(lockString, function(err, timeStamp) {
-				if(err) return process.nextTick(retry);
+				if(err || !timeStamp) return process.nextTick(retry);
 
 				timeStamp = parseFloat(timeStamp);
 
