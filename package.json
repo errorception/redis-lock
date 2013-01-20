@@ -9,7 +9,7 @@
 	},
 	"main": "index.js",
 	"engines": {
-		"node": "~0.6.11 || 0.6.11-pre"
+		"node": ">=0.6"
 	},
 	"dependencies": {},
 	"devDependencies": {
