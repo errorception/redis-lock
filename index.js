@@ -1,16 +1,17 @@
 "use strict";
 
-function acquireLock(client, lockString, lockTimeout, lockAcquired) {
+function acquireLock(client, lockName, timeout, onLockAquired) {
 	function retry() {
-		acquireLock(client, lockString, lockTimeout, lockAcquired);
+		acquireLock(client, lockName, timeout, onLockAquired);
 	}
 
-	var lockTimeoutValue = (Date.now() + lockTimeout + 1);
+	var lockTimeoutValue = (Date.now() + timeout + 1);
 
-	client.setnx(lockString, lockTimeoutValue, function(err, result) {
+	client.setnx(lockName, lockTimeoutValue, function(err, result) {
 		if(err) return process.nextTick(retry);
+
 		if(result === 0) {
-			client.get(lockString, function(err, timeStamp) {
+			client.get(lockName, function(err, timeStamp) {
 				if(err || !timeStamp) return process.nextTick(retry);
 
 				timeStamp = parseFloat(timeStamp);
@@ -18,12 +19,12 @@ function acquireLock(client, lockString, lockTimeout, lockAcquired) {
 				if(timeStamp > Date.now()) {
 					setTimeout(retry, 50);
 				} else {
-					lockTimeoutValue = (Date.now() + lockTimeout + 1)
-					client.getset(lockString, lockTimeoutValue, function(err, result) {
+					lockTimeoutValue = (Date.now() + timeout + 1)
+					client.getset(lockName, lockTimeoutValue, function(err, result) {
 						if(err) return process.nextTick(retry);
 
-						if(parseFloat(result) === timeStamp) {
-							lockAcquired(lockTimeoutValue);
+						if(result == timeStamp) {
+							onLockAquired(lockTimeoutValue);
 						} else {
 							retry();
 						}
@@ -31,7 +32,7 @@ function acquireLock(client, lockString, lockTimeout, lockAcquired) {
 				}
 			});
 		} else {
-			lockAcquired(lockTimeoutValue);
+			onLockAquired(lockTimeoutValue);
 		}
 	});
 }
@@ -41,21 +42,25 @@ module.exports = function(client) {
 		throw new Error("You must specify a client instance of http://github.com/mranney/node_redis");
 	}
 
-	return function(lockString, lockTimeout, lockedOperations) {
-		if(!lockString) {
+	return function(lockName, timeout, taskToPerform) {
+		if(!lockName) {
 			throw new Error("You must specify a lock string. It is on the basis on this the lock is acquired.");
 		}
 
-		if(!lockedOperations) {
-			lockedOperations = lockTimeout;
-			lockTimeout = 5000;
+		if(!taskToPerform) {
+			taskToPerform = timeout;
+			timeout = 5000;
 		}
 
-		lockString = "lock." + lockString;
+		lockName = "lock." + lockName;
 
-		acquireLock(client, lockString, lockTimeout, function(lockTimeoutValue) {
-			lockedOperations(function(allDone) {
-				if(lockTimeoutValue > Date.now()) client.del(lockString, allDone);
+		acquireLock(client, lockName, timeout, function(lockTimeoutValue) {
+			taskToPerform(function(done) {
+				if(lockTimeoutValue > Date.now()) {
+					client.del(lockName, done);
+				} else {
+					done();
+				}
 			});
 		});
 	}
