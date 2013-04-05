@@ -25,6 +25,7 @@
   "keywords": [
     "locks",
     "concurrency",
-    "redis"
+    "redis",
+    "distributed"
   ]
 }
