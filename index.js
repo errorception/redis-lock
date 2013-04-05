@@ -11,25 +11,34 @@ function acquireLock(client, lockName, timeout, onLockAquired) {
 		if(err) return process.nextTick(retry);
 
 		if(result === 0) {
-			client.get(lockName, function(err, timeStamp) {
-				if(err || !timeStamp) return process.nextTick(retry);
+			// Lock couldn't be aquired. Check if the existing lock has timed out.
 
-				timeStamp = parseFloat(timeStamp);
-
-				if(timeStamp > Date.now()) {
-					setTimeout(retry, 50);
-				} else {
-					lockTimeoutValue = (Date.now() + timeout + 1)
-					client.getset(lockName, lockTimeoutValue, function(err, result) {
-						if(err) return process.nextTick(retry);
-
-						if(result == timeStamp) {
-							onLockAquired(lockTimeoutValue);
-						} else {
-							retry();
-						}
-					});
+			client.get(lockName, function(err, existingLockTimestamp) {
+				if(err) return process.nextTick(retry);
+				if(!existingLockTimestamp) {
+					// Wait, the lock doesn't exist!
+					// Someone must have called .del after we called .setnx but before .get.
+					// https://github.com/errorception/redis-lock/pull/4
+					return setTimeout(retry, 50);
 				}
+
+				existingLockTimestamp = parseFloat(existingLockTimestamp);
+
+				if(existingLockTimestamp > Date.now()) {
+					// Lock looks valid so far. Wait some more time.
+					return setTimeout(retry, 50);
+				}
+
+				lockTimeoutValue = (Date.now() + timeout + 1)
+				client.getset(lockName, lockTimeoutValue, function(err, result) {
+					if(err) return process.nextTick(retry);
+
+					if(result == existingLockTimestamp) {
+						onLockAquired(lockTimeoutValue);
+					} else {
+						retry();
+					}
+				});
 			});
 		} else {
 			onLockAquired(lockTimeoutValue);
