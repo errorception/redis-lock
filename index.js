@@ -31,7 +31,7 @@ function acquireLock(client, lockName, timeout, onLockAquired) {
 
 				lockTimeoutValue = (Date.now() + timeout + 1)
 				client.getset(lockName, lockTimeoutValue, function(err, result) {
-					if(err) return process.nextTick(retry);
+					if(err) return setTimeout(retry, 50);
 
 					if(result == existingLockTimestamp) {
 						onLockAquired(lockTimeoutValue);
