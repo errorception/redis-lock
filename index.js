@@ -36,7 +36,7 @@ function acquireLock(client, lockName, timeout, onLockAquired) {
 					if(result == existingLockTimestamp) {
 						onLockAquired(lockTimeoutValue);
 					} else {
-						retry();
+						setTimeout(retry, 50);
 					}
 				});
 			});
