@@ -2,7 +2,7 @@
   "author": "Rakesh Pai <rakeshpai@errorception.com> (http://errorception.com/)",
   "name": "redis-lock",
   "description": "A locking primitive using redis.",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "repository": {
     "type": "git",
     "url": "git://github.com/errorception/redis-lock.git"
