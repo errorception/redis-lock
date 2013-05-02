@@ -8,13 +8,13 @@ function acquireLock(client, lockName, timeout, onLockAquired) {
 	var lockTimeoutValue = (Date.now() + timeout + 1);
 
 	client.setnx(lockName, lockTimeoutValue, function(err, result) {
-		if(err) return process.nextTick(retry);
+		if(err) return setTimeout(retry, 50);
 
 		if(result === 0) {
 			// Lock couldn't be aquired. Check if the existing lock has timed out.
 
 			client.get(lockName, function(err, existingLockTimestamp) {
-				if(err) return process.nextTick(retry);
+				if(err) return setTimeout(retry, 50);
 				if(!existingLockTimestamp) {
 					// Wait, the lock doesn't exist!
 					// Someone must have called .del after we called .setnx but before .get.
