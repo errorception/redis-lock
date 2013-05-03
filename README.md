@@ -99,11 +99,6 @@ lock("myLock", function(done) {
 * Since it's asynchronous, different functions could be holding different locks simultaneously. This is awesome!
 * If redis is down for any reason, none of the functions are given locks, and none of the locks are released. The code will keep polling to check if redis is available again to acquire the lock.
 
-## Changelog
-
-* 0.0.2 - Slightly nicer API - Now the redis client needs to be passed in only once at the beginning.
-* 0.0.1 - First release.
-
 ## License
 
 (The MIT License)
