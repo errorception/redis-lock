@@ -69,6 +69,8 @@ module.exports = function(client, retryDelay) {
 
 		acquireLock(client, lockName, timeout, retryDelay, function(lockTimeoutValue) {
 			taskToPerform(function(done) {
+				done = done || function() {};
+				
 				if(lockTimeoutValue > Date.now()) {
 					client.del(lockName, done);
 				} else {
