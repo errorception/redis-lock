@@ -1,5 +1,9 @@
 "use strict";
 
+function getLockTimeoutValue(timeout) {
+	return Date.now() + timeout + 1;
+}
+
 function acquireLock(client, lockName, timeout, retryDelay, onLockAquired) {
 	function retry() {
 		setTimeout(function() {
@@ -7,7 +11,7 @@ function acquireLock(client, lockName, timeout, retryDelay, onLockAquired) {
 		}, retryDelay);
 	}
 
-	var lockTimeoutValue = (Date.now() + timeout + 1);
+	var lockTimeoutValue = getLockTimeoutValue(timeout);
 
 	client.setnx(lockName, lockTimeoutValue, function(err, result) {
 		if(err) return retry();
@@ -76,6 +80,22 @@ module.exports = function(client, retryDelay) {
 				} else {
 					done();
 				}
+			}, function(done) {
+				done = done || function() {};
+				
+				var oldTimeoutValue = lockTimeoutValue
+				lockTimeoutValue = getLockTimeoutValue(timeout);
+				client.getset(lockName, lockTimeoutValue, function (err, existingLockTimestamp) {
+					if (err) return done(err);
+					if (!existingLockTimestamp) return done();
+
+					existingLockTimestamp = parseFloat(existingLockTimestamp);
+					if (existingLockTimestamp != oldTimeoutValue) {
+						done("lock is taken by another client");
+					} else {
+						done();
+					}
+				});
 			});
 		});
 	}
