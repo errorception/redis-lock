@@ -18,7 +18,7 @@
     "should": "0.x"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha"
+    "test": "./node_modules/mocha/bin/mocha --timeout 10000"
   },
   "optionalDependencies": {},
   "homepage": "https://github.com/errorception/redis-lock",
