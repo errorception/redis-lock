@@ -61,4 +61,31 @@ describe("redis-lock", function() {
 			done();
 		});
 	});
+
+
+	it("should lock 8secs", function (done) {
+		var start = 0;
+
+		lock("testLock", 2000, function(completed,extend) {
+			start = new Date();
+			var i = 0;
+			function retry () {
+				if (i++ < 8) {
+					extend(function (err) {
+						(!err).should.be.true
+						setTimeout(retry, 1000);
+					});
+				} else {
+					completed();
+				}
+			}
+			retry();
+		});
+
+		lock("testLock", 300, function(completed,extend) {
+			(new Date() - start).should.be.above(8000);
+			completed();
+			done();
+		});
+	});
 });
