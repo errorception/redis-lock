@@ -11,7 +11,8 @@ function acquireLock(client, lockName, timeout, retryDelay, onLockAquired) {
 
 	client.setnx(lockName, lockTimeoutValue, function(err, result) {
 		if(err) return retry();
-
+		
+		result = Number(result);
 		if(result === 0) {
 			// Lock couldn't be aquired. Check if the existing lock has timed out.
 
