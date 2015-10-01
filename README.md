@@ -56,7 +56,7 @@ lock("myLock", function(done) {
 
 To initialize redis-lock, simply call it by passing in a redis client instance, created by calling ``.createClient()`` on the excellent [node-redis](https://github.com/mranney/node_redis). This is taken in as a parameter because you might want to configure the client to suit your environment (host, port, etc.), and to enable you to reuse the client from your app if you want to.
 
-You can also provide a second (optional) parameter: `retryDelay`. If due to any reason a lock couldn't be acquired, lock aquisition is retried after waiting for a little bit of time. `retryDelay` lets you control this delay time. Default: 50ms.
+You can also provide a second (optional) parameter: `retryDelay`. If due to any reason a lock couldn't be acquired, lock acquisition is retried after waiting for a little bit of time. `retryDelay` lets you control this delay time. Default: 50ms.
 
 ```javascript
 var lock = require("redis-lock")(require("redis").createClient(), 10);
