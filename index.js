@@ -1,16 +1,16 @@
 "use strict";
 
-function acquireLock(client, lockName, timeout, retryDelay, onLockAquired) {
+function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
 	function retry() {
 		setTimeout(function() {
-			acquireLock(client, lockName, timeout, retryDelay, onLockAquired);
+			acquireLock(client, lockName, timeout, retryDelay, onLockAcquired);
 		}, retryDelay);
 	}
 
 	var lockTimeoutValue = (Date.now() + timeout + 1);
 	client.set(lockName, lockTimeoutValue, 'PX', timeout, 'NX', function(err, result) {
 		if(err || result === null) return retry();
-		onLockAquired(lockTimeoutValue);
+		onLockAcquired(lockTimeoutValue);
 	});
 }
 
