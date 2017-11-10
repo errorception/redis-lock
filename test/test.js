@@ -1,6 +1,7 @@
 var should = require("should"),
 	redisClient = require("redis").createClient(),
-	lock = require("../index")(redisClient);
+	lock = require("../index")(redisClient)
+	util = require("util");
 
 describe("redis-lock", function() {
 	it("should aquire a lock and call the callback", function(done) {
@@ -60,5 +61,21 @@ describe("redis-lock", function() {
 			completed();
 			done();
 		});
+	});
+
+	it("should work fine with promises", function() {
+		var promisedLock = util.promisify(lock);
+
+		promisedLock('testLock').then(function(unlock) {
+			setTimeout(unlock, 1000);
+		});
+	});
+
+	it("should work fine with async/await", async function() {
+		var asyncLock = util.promisify(lock);
+
+		var unlock = await asyncLock("testLock");
+
+		return new Promise(resolve => setTimeout(() => { unlock(); resolve(); }), 1000);
 	});
 });

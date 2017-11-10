@@ -5,7 +5,7 @@ redis-lock
 
 Implements a locking primitive using redis in node.js.
 
-Fully non-blocking and asynchronous, and uses the robust algorithm described in the [redis docs](http://redis.io/commands/setnx).
+Fully non-blocking and asynchronous, and uses the robust algorithm described in the [redis docs](https://redis.io/topics/distlock).
 
 Useful for concurrency control. For example, when updating a database record you might want to ensure that no other part of your code is updating the same record at that time.
 
@@ -34,8 +34,8 @@ lock("myLock", function(done) {
 });
 
 lock("myLock", function(done) {
-	// Even though this function has been scheduled at the same time 
-	// as the function above, this callback will not be executed till 
+	// Even though this function has been scheduled at the same time
+	// as the function above, this callback will not be executed till
 	// the function above has called done(). Hence, this will have to
 	// wait for at least 1 second.
 
@@ -90,6 +90,48 @@ lock("myLock", function(done) {
 	}, 2000);
 });
 ```
+
+## Use with promises and async/await.
+
+Starting node 8.x, you can use `util.promisify` to promisify the lock.
+```javascript
+const client = require('redis').createClient();
+const { promisify } = require('util');
+const lock = promisify(require('redis-lock')(client));
+
+lock('lockString').then(unlock => {
+	// Perform your task
+	unlock();
+});
+```
+
+Or even better, with `async`/`await`:
+```javascript
+const client = require('redis').createClient();
+const { promisify } = require('util');
+const lock = promisify(require('redis-lock')(client));
+
+const unlock = await lock('lockString');
+// Perform your task;
+unlock();
+```
+
+You might additionally want to wrap the `unlock` function in a promise, if you
+want to be notified when unlocking is complete.
+
+Possible pattern for use with `async`/`await`, with error bubbling, and reliable unlocking:
+```javascript
+const unlock = await lock('lockString');
+try {
+	// Perform you task
+} catch (e) {
+	throw e;
+} finally {
+	unlock();
+}
+```
+
+The promisified version might become the default in future versions, depending on adoption of promises and async/await. For now, though this module handles promises correctly internally, the act of promisifying is left to the caller.
 
 ## Details
 

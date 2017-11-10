@@ -13,9 +13,9 @@
   },
   "dependencies": {},
   "devDependencies": {
-    "mocha": "1.0.x",
-    "redis": "0.x",
-    "should": "0.x"
+    "mocha": "^4.0.1",
+    "redis": "^2.8.0",
+    "should": "^13.1.3"
   },
   "scripts": {
     "test": "./node_modules/mocha/bin/mocha"

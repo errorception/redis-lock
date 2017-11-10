@@ -1,5 +1,8 @@
 "use strict";
 
+var util = require('util');
+var defaultTimeout = 5000;
+
 function acquireLock(client, lockName, timeout, retryDelay, onLockAquired) {
 	function retry() {
 		setTimeout(function() {
@@ -21,14 +24,14 @@ module.exports = function(client, retryDelay) {
 
 	retryDelay = retryDelay || 50;
 
-	return function(lockName, timeout, taskToPerform) {
+	function lock(lockName, timeout, taskToPerform) {
 		if(!lockName) {
 			throw new Error("You must specify a lock string. It is on the redis key `lock.[string]` that the lock is acquired.");
 		}
 
 		if(!taskToPerform) {
 			taskToPerform = timeout;
-			timeout = 5000;
+			timeout = defaultTimeout;
 		}
 
 		lockName = "lock." + lockName;
@@ -45,4 +48,14 @@ module.exports = function(client, retryDelay) {
 			});
 		});
 	}
+
+	if(util.promisify) {
+		lock[util.promisify.custom] = function(lockName, timeout) {
+			return new Promise(function(resolve) {
+				lock(lockName, timeout || defaultTimeout, resolve);
+			});
+		}
+	}
+
+	return lock;
 };
