@@ -4,6 +4,10 @@ var should = require("should"),
 	util = require("util");
 
 describe("redis-lock", function() {
+	after(function() {
+		process.exit();
+	});
+
 	it("should aquire a lock and call the callback", function(done) {
 		lock("testLock", function(completed) {
 			redisClient.get("lock.testLock", function(err, timeStamp) {
