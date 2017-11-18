@@ -5,7 +5,7 @@ redis-lock
 
 Implements a locking primitive using redis in node.js.
 
-Fully non-blocking and asynchronous, and uses the robust algorithm described in the [redis docs](https://redis.io/topics/distlock).
+Fully non-blocking and asynchronous, and uses the algorithm described in the [redis docs](https://redis.io/commands/setnx).
 
 Useful for concurrency control. For example, when updating a database record you might want to ensure that no other part of your code is updating the same record at that time.
 
