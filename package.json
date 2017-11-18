@@ -18,7 +18,7 @@
     "should": "^13.x"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha"
+    "test": "./node_modules/mocha/bin/mocha --reporter spec"
   },
   "optionalDependencies": {},
   "homepage": "https://github.com/errorception/redis-lock",

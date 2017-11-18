@@ -3,10 +3,10 @@ var should = require("should"),
 	lock = require("../index")(redisClient)
 	util = require("util");
 
+const delay = ms => new Promise(res => setTimeout(res, ms));
+	
 describe("redis-lock", function() {
-	after(function() {
-		process.exit();
-	});
+	after(process.exit);
 
 	it("should aquire a lock and call the callback", function(done) {
 		lock("testLock", function(completed) {
@@ -67,19 +67,39 @@ describe("redis-lock", function() {
 		});
 	});
 
-	it("should work fine with promises", function() {
+	it("should work fine with promises", function(done) {
 		var promisedLock = util.promisify(lock);
+		var startTime = Date.now();
 
 		promisedLock('testLock').then(function(unlock) {
-			setTimeout(unlock, 1000);
+			return delay(100).then(unlock);
+		});
+
+		promisedLock('testLock').then(function(unlock) {
+			(Date.now() - startTime).should.be.above(100);
+			return delay(100).then(() => {
+				unlock().then(() => done());
+			});
 		});
 	});
 
 	it("should work fine with async/await", async function() {
 		var asyncLock = util.promisify(lock);
+		var startTime = Date.now();
 
-		var unlock = await asyncLock("testLock");
+		await Promise.all([
+			(async () => {
+				var unlock = await asyncLock("testLock");
+				await delay(100);
+				await unlock();
+			})(),
+			(async () => {
+				var unlock = await asyncLock("testLock");
+				await delay(100);
+				await unlock();
+			})()
+		]);
 
-		return new Promise(resolve => setTimeout(() => { unlock(); resolve(); }), 1000);
+		(Date.now() - startTime).should.be.above(200);
 	});
 });

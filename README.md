@@ -11,6 +11,8 @@ Useful for concurrency control. For example, when updating a database record you
 
 Used heavily at [errorception](http://errorception.com/).
 
+Starting Node 8, you can promisify the lock function
+
 ## Example
 
 ```javascript
@@ -116,8 +118,7 @@ const unlock = await lock('lockString');
 unlock();
 ```
 
-You might additionally want to wrap the `unlock` function in a promise, if you
-want to be notified when unlocking is complete.
+The `unlock` function is internally promisified, so you can `await` for when the lock is released.
 
 Possible pattern for use with `async`/`await`, with error bubbling, and reliable unlocking:
 ```javascript

@@ -2,18 +2,19 @@
 
 var util = require('util');
 var defaultTimeout = 5000;
+var promisify = util.promisify || function(x) { return x; };
 
-function acquireLock(client, lockName, timeout, retryDelay, onLockAquired) {
+function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
 	function retry() {
 		setTimeout(function() {
-			acquireLock(client, lockName, timeout, retryDelay, onLockAquired);
+			acquireLock(client, lockName, timeout, retryDelay, onLockAcquired);
 		}, retryDelay);
 	}
 
 	var lockTimeoutValue = (Date.now() + timeout + 1);
 	client.set(lockName, lockTimeoutValue, 'PX', timeout, 'NX', function(err, result) {
 		if(err || result === null) return retry();
-		onLockAquired(lockTimeoutValue);
+		onLockAcquired(lockTimeoutValue);
 	});
 }
 
@@ -37,7 +38,7 @@ module.exports = function(client, retryDelay) {
 		lockName = "lock." + lockName;
 
 		acquireLock(client, lockName, timeout, retryDelay, function(lockTimeoutValue) {
-			taskToPerform(function(done) {
+			taskToPerform(promisify(function(done) {
 				done = done || function() {};
 
 				if(lockTimeoutValue > Date.now()) {
@@ -45,7 +46,7 @@ module.exports = function(client, retryDelay) {
 				} else {
 					done();
 				}
-			});
+			}));
 		});
 	}
 
