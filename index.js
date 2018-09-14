@@ -4,7 +4,7 @@ var util = require('util');
 var defaultTimeout = 5000;
 var promisify = util.promisify || function(x) { return x; };
 
-function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
+function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired, onAlreadyLocked) {
 	function retry() {
 		setTimeout(function() {
 			acquireLock(client, lockName, timeout, retryDelay, onLockAcquired);
@@ -13,7 +13,10 @@ function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
 
 	var lockTimeoutValue = (Date.now() + timeout + 1);
 	client.set(lockName, lockTimeoutValue, 'PX', timeout, 'NX', function(err, result) {
-		if(err || result === null) return retry();
+		if(err || result === null){
+			if(retryDelay) return retry();
+			else return onAlreadyLocked()
+		}
 		onLockAcquired(lockTimeoutValue);
 	});
 }
@@ -23,7 +26,7 @@ module.exports = function(client, retryDelay) {
 		throw new Error("You must specify a client instance of http://github.com/mranney/node_redis");
 	}
 
-	retryDelay = retryDelay || 50;
+	retryDelay = typeof retryDelay === 'undefined' ? 50 : retryDelay;
 
 	function lock(lockName, timeout, taskToPerform) {
 		if(!lockName) {
@@ -38,7 +41,7 @@ module.exports = function(client, retryDelay) {
 		lockName = "lock." + lockName;
 
 		acquireLock(client, lockName, timeout, retryDelay, function(lockTimeoutValue) {
-			taskToPerform(promisify(function(done) {
+			const doneCb = promisify(function(done) {
 				done = done || function() {};
 
 				if(lockTimeoutValue > Date.now()) {
@@ -46,7 +49,17 @@ module.exports = function(client, retryDelay) {
 				} else {
 					done();
 				}
-			}));
+			})
+
+			if(retryDelay){
+				taskToPerform(doneCb);
+			}else{
+				taskToPerform(null, doneCb);
+			}
+		}, function(){
+			const err = new Error("Locked already acquired")
+			err.code = "ALREADY_LOCKED"
+			taskToPerform(err) // errored acquiring lock
 		});
 	}
 

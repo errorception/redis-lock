@@ -1,6 +1,7 @@
 var should = require("should"),
 	redisClient = require("redis").createClient(),
-	lock = require("../index")(redisClient)
+	lock = require("../index")(redisClient),
+	lockWithoutDelay = require("../index")(redisClient, 0),
 	util = require("util");
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
@@ -52,6 +53,35 @@ describe("redis-lock", function() {
 			}
 		}
 	});
+
+
+	it("should throw error in second operation if delay is zero and first has lock", function(done) {
+		var errored = 0, success = 0;
+		lockWithoutDelay("testLock", function(err, completed) {
+			setTimeout(function() {
+				if(!err){
+					success++;
+					completed();
+					proceed();
+				}
+			}, 500);	// Longer, started first
+		});
+
+		lockWithoutDelay("testLock", function(err, completed) {
+			if(err && err.code == "ALREADY_LOCKED"){
+				errored++
+			}
+			proceed();
+		});
+
+		function proceed() {
+			if(errored === 1 && success == 1) {
+				errored.should.equal(1);
+				done();
+			}
+		}
+	});
+
 
 	it("shouldn't create a deadlock if the first operation doesn't release the lock within <timeout>", function(done) {
 		var start = new Date();
