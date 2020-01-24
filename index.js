@@ -1,24 +1,26 @@
 "use strict";
 
-var util = require('util');
-var defaultTimeout = 5000;
-var promisify = util.promisify || function(x) { return x; };
+const util = require('util');
+const defaultTimeout = 5000;
+const promisify = util.promisify || function(x) { return x; };
 
 function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
 	function retry() {
-		setTimeout(function() {
+		/* this is where we recursively re-call ourself */
+		setTimeout(() => {
 			acquireLock(client, lockName, timeout, retryDelay, onLockAcquired);
 		}, retryDelay);
 	}
 
-	var lockTimeoutValue = (Date.now() + timeout + 1);
-	client.set(lockName, lockTimeoutValue, 'PX', timeout, 'NX', function(err, result) {
+	/* `lockTimeoutValue` is the value after which the lock is automatically released. wathever the use? */
+	const lockTimeoutValue = (Date.now() + timeout + /* just in case is 0  we add 1 ms */ 1);
+	client.set(lockName, lockTimeoutValue, 'PX', timeout, 'NX', (err, result) => {
 		if(err || result === null) return retry();
 		onLockAcquired(lockTimeoutValue);
 	});
 }
 
-module.exports = function(client, retryDelay) {
+module.exports = (client, retryDelay) => {
 	if(!(client && client.setnx)) {
 		throw new Error("You must specify a client instance of http://github.com/mranney/node_redis");
 	}
