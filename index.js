@@ -1,17 +1,17 @@
 "use strict";
 
-var util = require('util');
-var defaultTimeout = 5000;
-var promisify = util.promisify || function(x) { return x; };
+const util = require('util');
+const defaultTimeout = 5000;
+const promisify = util.promisify || function(x) { return x; };
 
 function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
 	function retry() {
-		setTimeout(function() {
+		setTimeout(() => {
 			acquireLock(client, lockName, timeout, retryDelay, onLockAcquired);
 		}, retryDelay);
 	}
 
-	var lockTimeoutValue = (Date.now() + timeout + 1);
+	const lockTimeoutValue = (Date.now() + timeout + 1);
 	client.set(lockName, lockTimeoutValue, 'PX', timeout, 'NX', function(err, result) {
 		if(err || result === null) return retry();
 		onLockAcquired(lockTimeoutValue);
