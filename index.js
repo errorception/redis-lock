@@ -20,7 +20,7 @@ function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
 
 module.exports = function(client, retryDelay) {
 	if(!(client && client.setnx)) {
-		throw new Error("You must specify a client instance of http://github.com/mranney/node_redis");
+		throw new Error("You must specify a client instance of https://github.com/redis/node-redis");
 	}
 
 	retryDelay = retryDelay || 50;
