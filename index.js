@@ -1,62 +1,52 @@
 "use strict";
 
-var util = require('util');
-var defaultTimeout = 5000;
-var promisify = util.promisify || function(x) { return x; };
+const DEFAULT_TIMEOUT = 5000;
+const DEFAULT_RETRY_DELAY = 50;
 
-function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired) {
-	function retry() {
-		setTimeout(function() {
-			acquireLock(client, lockName, timeout, retryDelay, onLockAcquired);
-		}, retryDelay);
-	}
+async function acquireLock (client, lockName, timeout, retryDelay, onLockAcquired) {
+    function retry () {
+        setTimeout(() => {
+            acquireLock(client, lockName, timeout, retryDelay, onLockAcquired);
+        }, retryDelay);
+    }
 
-	var lockTimeoutValue = (Date.now() + timeout + 1);
-	client.set(lockName, lockTimeoutValue, 'PX', timeout, 'NX', function(err, result) {
-		if(err || result === null) return retry();
-		onLockAcquired(lockTimeoutValue);
-	});
+    const lockTimeoutValue = Date.now() + timeout + 1;
+    try {
+        const result = await client.set(lockName, lockTimeoutValue, {
+            PX: timeout,
+            NX: true
+        });
+        if (result === null) {
+            throw new Error("Lock failed");
+        }
+        onLockAcquired(lockTimeoutValue);
+    } catch (err) {
+        retry();
+    }
 }
 
-module.exports = function(client, retryDelay) {
-	if(!(client && client.setnx)) {
-		throw new Error("You must specify a client instance of http://github.com/mranney/node_redis");
+function redisLock (client, retryDelay = DEFAULT_RETRY_DELAY) {
+	if(!(client && client.set && "v4" in client)) {
+		throw new Error("You must specify a v4 client instance of https://github.com/redis/node-redis");
 	}
+    async function lock (lockName, timeout = DEFAULT_TIMEOUT) {
+        return new Promise(resolve => {
+            if (!lockName) {
+                throw new Error("You must specify a lock string. It is on the redis key `lock.[string]` that the lock is acquired.");
+            }
 
-	retryDelay = retryDelay || 50;
+            lockName = `lock.${ lockName}`;
 
-	function lock(lockName, timeout, taskToPerform) {
-		if(!lockName) {
-			throw new Error("You must specify a lock string. It is on the redis key `lock.[string]` that the lock is acquired.");
-		}
+            acquireLock(client, lockName, timeout, retryDelay, lockTimeoutValue => {
+                resolve(async () => {
+                    if (lockTimeoutValue > Date.now()) {
+                        return client.del(lockName);
+                    }
+                });
+            });
+        });
+    }
+    return lock;
+}
 
-		if(!taskToPerform) {
-			taskToPerform = timeout;
-			timeout = defaultTimeout;
-		}
-
-		lockName = "lock." + lockName;
-
-		acquireLock(client, lockName, timeout, retryDelay, function(lockTimeoutValue) {
-			taskToPerform(promisify(function(done) {
-				done = done || function() {};
-
-				if(lockTimeoutValue > Date.now()) {
-					client.del(lockName, done);
-				} else {
-					done();
-				}
-			}));
-		});
-	}
-
-	if(util.promisify) {
-		lock[util.promisify.custom] = function(lockName, timeout) {
-			return new Promise(function(resolve) {
-				lock(lockName, timeout || defaultTimeout, resolve);
-			});
-		}
-	}
-
-	return lock;
-};
+module.exports = redisLock;

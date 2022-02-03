@@ -9,16 +9,16 @@
   },
   "main": "index.js",
   "engines": {
-    "node": ">=0.6"
+    "node": ">=12"
   },
   "dependencies": {},
   "devDependencies": {
     "mocha": "4.x",
-    "redis": "2.x",
+    "redis": "4.x",
     "should": "^13.x"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha --reporter spec"
+    "test": "mocha"
   },
   "optionalDependencies": {},
   "homepage": "https://github.com/errorception/redis-lock",
