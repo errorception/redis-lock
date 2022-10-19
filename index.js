@@ -30,7 +30,7 @@ function acquireLock(client, lockName, timeout, retryDelay, onLockAcquired, isRe
 }
 
 module.exports = function(client, retryDelay) {
-	if(!(client && (client.setnx ||  client.setNX))) {
+	if(!(client && (client.setnx ||  client.setNX || client.SETNX))) {
 		throw new Error("You must specify a client instance of https://github.com/redis/node-redis");
 	}
 
