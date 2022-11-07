@@ -11,38 +11,40 @@ Useful for concurrency control. For example, when updating a database record you
 
 Used heavily at [errorception](http://errorception.com/).
 
-Starting Node 8, you can promisify the lock function
+Requires v4 of [node-redis](https://github.com/redis/node-redis)
+For previous versions use [v0.1.4](https://www.npmjs.com/package/redis-lock/v/0.1.4)
 
 ## Example
 
 ```javascript
-var client = require("redis").createClient(),
+const client = require("redis").createClient(),
 	lock = require("redis-lock")(client);
 
-lock("myLock", function(done) {
-	// No one else will be able to get a lock on 'myLock' until you call done()
-	done();
-});
+await client.connect(); // node-redis v4 needs to connect before sending commands
+
+const done = await lock("myLock")
+// No one else will be able to get a lock on 'myLock' until you call done()
+await done();
+
 ```
 
 Slightly more descriptive example:
 ```javascript
-var client = require("redis").createClient(),
+const client = require("redis").createClient(),
 	lock = require("redis-lock")(client);
 
-lock("myLock", function(done) {
-	// Simulate a 1 second long operation
-	setTimeout(done, 1000);
-});
+await client.connect();
 
-lock("myLock", function(done) {
-	// Even though this function has been scheduled at the same time
-	// as the function above, this callback will not be executed till
-	// the function above has called done(). Hence, this will have to
-	// wait for at least 1 second.
+const done1 = await lock("myLock")
+// Simulate a 1 second long operation
+setTimeout(done1, 1000);
 
-	done();
-});
+const done2 = await lock("myLock")
+// Even though this function has been scheduled at the same time
+// as the function above, this callback will not be executed till
+// the function above has called done(). Hence, this will have to
+// wait for at least 1 second.
+await done2();
 ```
 
 ## Installation
@@ -56,83 +58,38 @@ lock("myLock", function(done) {
 
 ### Initialization
 
-To initialize redis-lock, simply call it by passing in a redis client instance, created by calling ``.createClient()`` on the excellent [node-redis](https://github.com/mranney/node_redis). This is taken in as a parameter because you might want to configure the client to suit your environment (host, port, etc.), and to enable you to reuse the client from your app if you want to.
+To initialize redis-lock, simply call it by passing in a redis client instance, created by calling ``.createClient()`` on the excellent [node-redis](https://github.com/redis/node_redis). This is taken in as a parameter because you might want to configure the client to suit your environment (host, port, etc.), and to enable you to reuse the client from your app if you want to.
 
 You can also provide a second (optional) parameter: `retryDelay`. If due to any reason a lock couldn't be acquired, lock acquisition is retried after waiting for a little bit of time. `retryDelay` lets you control this delay time. Default: 50ms.
 
 ```javascript
-var lock = require("redis-lock")(require("redis").createClient(), 10);
+const lock = require("redis-lock")(require("redis").createClient(), 10);
 ```
 
 This will return a function called (say) ``lock``, described below:
 
-### lock(lockName, [timeout = 5000], cb)
+### lock(lockName, [timeout = 5000]): done
 
 * ``lockName``: Any name for a lock. Must follow redis's key naming rules. Make this as granular as you can. For example, to get a lock when editing record 1 in the database, call the lock ``record1`` rather than ``database``, so that other records in the database can be modified even as you are holding this lock.
 * ``timeout``: (Optional) The maximum time (in ms) to hold the lock for. If this time is exceeded, the lock is automatically released to prevent deadlocks. Default: 5000 ms (5 seconds).
-* ``cb``: The function to call when the lock has been acquired. This function gets one argument - a method called (say) ``done`` which should be called to release the lock.
 
-The ``done`` function can optionally take a callback function as an argument, in case you want to be notified when the lock has been really released, though I don't know why you'd want that.
+Returns a ``done`` async function which releases the lock (or do nothing if timeout has already released it)
 
 Full example, with ``console.log`` calls to illustrate the flow:
 ```javascript
-var client = require("redis").createClient(),
+const client = require("redis").createClient(),
 	lock = require("redis-lock")(client);
 
+await client.connect();
+
 console.log("Asking for lock");
-lock("myLock", function(done) {
-	console.log("Lock acquired");
-
-	setTimeout(function() {		// Simulate some task
-		console.log("Releasing lock now");
-
-		done(function() {
-			console.log("Lock has been released, and is available for others to use");
-		});
-	}, 2000);
-});
+const done = await lock("myLock")
+console.log("Lock acquired");
+await someTask() // Some async task
+console.log("Releasing lock now");
+await done()
+console.log("Lock has been released, and is available for others to use");
 ```
-
-## Use with promises and async/await.
-
-Starting node 8.x, you can use `util.promisify` to promisify the lock.
-```javascript
-const client = require('redis').createClient();
-const { promisify } = require('util');
-const lock = promisify(require('redis-lock')(client));
-
-lock('lockString').then(unlock => {
-	// Perform your task
-	unlock();
-});
-```
-
-Or even better, with `async`/`await`:
-```javascript
-const client = require('redis').createClient();
-const { promisify } = require('util');
-const lock = promisify(require('redis-lock')(client));
-
-const unlock = await lock('lockString');
-// Perform your task;
-unlock();
-```
-
-The `unlock` function is internally promisified, so you can `await` for when the lock is released.
-
-Possible pattern for use with `async`/`await`, with error bubbling, and reliable unlocking:
-```javascript
-const unlock = await lock('lockString');
-try {
-	// Perform you task
-} catch (e) {
-	throw e;
-} finally {
-	unlock();
-}
-```
-
-The promisified version might become the default in future versions, depending on adoption of promises and async/await. For now, though this module handles promises correctly internally, the act of promisifying is left to the caller.
 
 ## Details
 
