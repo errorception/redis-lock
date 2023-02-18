@@ -8,6 +8,7 @@
     "url": "git://github.com/errorception/redis-lock.git"
   },
   "main": "index.js",
+  "types": "index.d.ts",
   "engines": {
     "node": ">=12"
   },
