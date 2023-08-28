@@ -1,6 +1,8 @@
-const should = require("should"),
-	redisClient = require("redis").createClient(),
-	lock = require("../index")(redisClient)
+const should = require("should")
+const Redis = require("ioredis")
+const redisClient = new Redis(); 
+const lock = require("../index")(redisClient)
+
 
 const delay = (fn, ms) => new Promise(
 	res => setTimeout(async () => {
@@ -11,7 +13,12 @@ const delay = (fn, ms) => new Promise(
 	
 describe("redis-lock", function() {
 	before(async () => {
-		await redisClient.connect();
+		try {
+			await redisClient.connect();
+		}
+		catch (err) {
+			// Ignore if redis have connected
+		}
 	})
 
 	after(async () => {
@@ -51,7 +58,8 @@ describe("redis-lock", function() {
 
 		const completed = await lock("testLock");
 		// This should be called after 300 ms
-		(new Date() - start).should.be.above(300);
+		const timeout = (new Date()) - start
+		timeout.should.be.above(300);
 		await completed();
 	});
 });
