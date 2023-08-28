@@ -14,7 +14,7 @@
   "dependencies": {},
   "devDependencies": {
     "mocha": "4.x",
-    "redis": "4.x",
+    "ioredis": "5.x",
     "should": "^13.x"
   },
   "scripts": {

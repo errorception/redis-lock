@@ -12,10 +12,11 @@ async function acquireLock (client, lockName, timeout, retryDelay, onLockAcquire
 
     const lockTimeoutValue = Date.now() + timeout + 1;
     try {
-        const result = await client.set(lockName, lockTimeoutValue, {
-            PX: timeout,
-            NX: true
-        });
+        const result = await client.set(lockName, lockTimeoutValue, "NX")
+        if (result === null) {
+            throw new Error("Lock failed");
+        }
+        await client.set(lockName, lockTimeoutValue, "PX", timeout)
         if (result === null) {
             throw new Error("Lock failed");
         }
@@ -26,9 +27,6 @@ async function acquireLock (client, lockName, timeout, retryDelay, onLockAcquire
 }
 
 function redisLock (client, retryDelay = DEFAULT_RETRY_DELAY) {
-	if(!(client && client.set && "v4" in client)) {
-		throw new Error("You must specify a v4 client instance of https://github.com/redis/node-redis");
-	}
     async function lock (lockName, timeout = DEFAULT_TIMEOUT) {
         return new Promise(resolve => {
             if (!lockName) {
